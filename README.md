@@ -40,33 +40,33 @@ Each entry in the config is a named injection block.
 ### `README.md` snippet:
 ```markdown
 <!-- DOC_INJECT_CONFIG
-<!-- DOC_INJECT_CONFIG
 {
-  "md-from-dashboard": {
-    "file": "dashboards/overview.json",
-    "query": "$.panels[?(@.type=='text')].options.content",
-    "template": "{{ value }}"
-  },
-  "ref-dashboard": {
+  "simple-dashboard": {
     "file": "dashboards/main.json",
-    "parser": "json",
-    "vars": {
-      "uid": "$.uid",
-      "title": "$.title"
-    },
-    "template": "[{{ title }}](https://grafana.example.com/d/{{ uid }})"
+    "query": "$.uid",
+    "template": "[Dashboard](https://grafana.example.com/d/{{ value }})",
+    "strict_template": true
+  },
+  "version-note": {
+    "file": "CHANGELOG.md",
+    "parser": "text",
+    "query": "regex:^Version: (?P<version>\\d+\\.\\d+\\.\\d+)",
+    "template": "**Current Version**: {{ version }}",
+    "strict_template": false
   }
 }
 -->
 
 ...
 
-<!-- DOC_INJECT_START md-from-dashboard -->
-<!-- DOC_INJECT_END md-from-dashboard -->
+<!-- DOC_INJECT_START simple-dashboard-->
+<!-- DOC_INJECT_END simple-dashboard -->
 
 ...
 
-<!-- DOC_INJECT_START ref-dashboard -->
-<!-- DOC_INJECT_END ref-dashboard -->
+<!-- DOC_INJECT_START version-note -->
+<!-- DOC_INJECT_END version-note -->
 
 ```
+
+
