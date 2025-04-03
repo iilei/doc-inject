@@ -13,4 +13,11 @@ def run(
     dry_run: bool = typer.Option(False, help="Print output instead of modifying the file."),
 ):
     """Render and inject content into a document."""
-    inject_from_file(file, dry_run=dry_run)
+    try:
+        inject_from_file(file, dry_run=dry_run)
+    except ValueError as e:
+        typer.echo(f"❌ Error: {e}", err=True)
+        raise typer.Exit(code=1)
+
+
+app.command(name=None)(run)

@@ -21,6 +21,7 @@ class InjectItem(BaseModel):
     query: Optional[str] = None
     vars: Optional[Dict[str, str]] = None
     template: str
+    strict_template: Optional[bool] = None
 
     @model_validator(mode="after")
     def validate_parser_and_query(self) -> "InjectItem":
