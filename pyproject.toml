@@ -1,0 +1,49 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "doc-inject"
+version = "0.1.0"
+description = "Inject rendered content into documents from a single source of truth."
+authors = [{ name = "Your Name", email = "you@example.com" }]
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.8"
+dependencies = [
+  "typer[all]>=0.9.0",
+  "jinja2",
+  "pyyaml",
+  "tomli; python_version<'3.11'",
+]
+
+[project.scripts]
+doc-inject = "doc_inject.cli:app"
+
+[tool.hatch.envs.default]
+dependencies = [
+  "pytest",
+  "ruff",
+  "pre-commit",
+]
+
+[tool.hatch.envs.default.scripts]
+test = "pytest"
+lint = "ruff check ."
+fmt = "ruff format ."
+fix = "ruff check . --fix"
+all = [
+  "ruff format .",
+  "ruff check . --fix"
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py38"
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]  # Errors, pyflakes, isort
+ignore = ["E501"]         # Ignore long lines (optional)
+
+[tool.ruff.format]
+quote-style = "double"

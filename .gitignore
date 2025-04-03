@@ -1,0 +1,57 @@
+# Byte-compiled / cache
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+*.so
+
+# Unit test / coverage reports
+.cache/
+coverage.*
+htmlcov/
+.tox/
+nosetests.xml
+pytestdebug.log
+.pytest_cache/
+
+# Ruff
+ruff_cache/
+ruff.log
+
+# Hatch build artifacts
+dist/
+build/
+*.egg-info/
+
+# Hatch envs (if using local virtualenvs)
+.hatch/
+
+# Pre-commit
+.pre-commit-config.yaml~
+.pre-commit-hooks.yaml~
+.pre-commit/
+*.rej
+*.orig
+
+# Editor/IDE
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# MacOS
+.DS_Store
+
+# Linux
+*~
+*.swp
+*.swo
+
+# Virtualenvs
+env/
+venv/
+.venv/
+
+# Logs / misc
+*.log
