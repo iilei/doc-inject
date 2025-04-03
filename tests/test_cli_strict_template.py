@@ -17,10 +17,10 @@ def test_cli_respects_strict_template_false(tmp_path):
     readme_path = tmp_path / "README.md"
     readme_path.write_text(
         dedent("""\
-        <!-- DOC_INJECT_CONFIG
+        <!-- doc-inject:configure
         {
           "test-block": {
-            "file": "data.json",
+            "file": "<file>",
             "parser": "json",
             "query": "$.uid",
             "template": "Hello {{ missing }}",
@@ -31,7 +31,7 @@ def test_cli_respects_strict_template_false(tmp_path):
 
         <!-- DOC_INJECT_START test-block -->
         <!-- DOC_INJECT_END test-block -->
-    """)
+        """).replace("<file>", str(json_path))
     )
 
     result = runner.invoke(app, ["run", str(readme_path)])
@@ -50,10 +50,10 @@ def test_cli_strict_env_false_allows_missing(monkeypatch, tmp_path):
     readme_path = tmp_path / "README.md"
     readme_path.write_text(
         dedent("""\
-        <!-- DOC_INJECT_CONFIG
+        <!-- doc-inject:configure
         {
           "env-test": {
-            "file": "data.json",
+            "file": "<file>",
             "parser": "json",
             "query": "$.x",
             "template": "{{ missing }}"
@@ -62,11 +62,14 @@ def test_cli_strict_env_false_allows_missing(monkeypatch, tmp_path):
         -->
 
         <!-- DOC_INJECT_START env-test -->
+        ?
         <!-- DOC_INJECT_END env-test -->
-    """)
+    """).replace("<file>", str(data_path))
     )
 
     result = runner.invoke(app, ["run", str(readme_path)])
 
     assert result.exit_code == 0
-    assert readme_path.read_text().count("{{ missing }}") == 0
+    assert "<!-- DOC_INJECT_START env-test --><!-- DOC_INJECT_END env-test -->" in "".join(
+        readme_path.read_text().split("\n")
+    )

@@ -4,7 +4,7 @@ This document describes all available fields in the `<!-- DOC_INJECT_CONFIG ... 
 
 ---
 
-## :wrench: Basic Structure
+## 🔧 Basic Structure
 Each injection block defines how dynamic content is extracted and rendered:
 
 ```json
@@ -23,14 +23,14 @@ Each injection block defines how dynamic content is extracted and rendered:
 
 ## :puzzle_piece: Field Reference
 
-| Field             | Type      | Required                        | Description                                                                                                   |
-| ----------------- | --------- | ------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| `file`            | `string`  | :white_check_mark: Yes          | Path to the source file. JSON, YAML, TOML, Markdown, etc.                                                     |
-| `parser`          | `string`  | :x: No                          | One of: `json`, `yaml`, `toml`, `text`. Inferred from file extension if omitted.                              |
-| `query`           | `string`  | :ballot_box_with_check: Option* | Query expression used to extract the value into `{{ value }}`. Required if `vars` is not provided.            |
-| `vars`            | `object`  | :ballot_box_with_check: Option* | Mapping of variable names to query expressions. Required if `query` is not provided.                          |
-| `template`        | `string`  | :white_check_mark: Yes          | Jinja2 template string. Uses `{{ value }}` or named variables from `vars`.                                    |
-| `strict_template` | `boolean` | :x: No                          | Enforces strict rendering (default: true). If false, missing template variables will render as empty strings. |
+| Field             | Type      | Required                          | Description                                                                                                   |
+| ----------------- | --------- | --------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `file`            | `string`  | :white_check_mark: Yes            | Path to the source file. JSON, YAML, TOML, Markdown, etc.                                                     |
+| `parser`          | `string`  | :x: No                            | One of: `json`, `yaml`, `toml`, `text`. Inferred from file extension if omitted.                              |
+| `query`           | `string`  | :ballot_box_with_check: Required* | Query expression used to extract the value into `{{ value }}`. Required if `vars` is not provided.            |
+| `vars`            | `object`  | :ballot_box_with_check: Required* | Mapping of variable names to query expressions. Required if `query` is not provided.                          |
+| `template`        | `string`  | :white_check_mark: Yes            | Jinja2 template string. Uses `{{ value }}` or named variables from `vars`.                                    |
+| `strict_template` | `boolean` | :x: No                            | Enforces strict rendering (default: true). If false, missing template variables will render as empty strings. |
 
 > :warning: You must provide **either** `query` or `vars`. You cannot omit both.
 
@@ -93,4 +93,47 @@ This only applies when `strict_template` is **not explicitly set** in the config
 
 ---
 
+## :mag: Configuration in Comments (Inline Blocks)
+
+You may embed configuration directly into supported source files using comments. This works across file formats with different comment styles. Use the directive `doc-inject:configure` followed by structured config.
+
+### :page_facing_up: Supported Comment Styles
+
+| File Extension   | Comment Prefix | Example Syntax                        |
+| ---------------- | -------------- | ------------------------------------- |
+| `.yaml`, `.yml`  | `#`            | `# doc-inject:configure`              |
+| `.toml`          | `#`            | `# doc-inject:configure`              |
+| `.json5`         | `//`           | `// doc-inject:configure`             |
+| `.md`, `.html`   | `<!-- ... -->` | `<!-- doc-inject:configure {...} -->` |
+| `.jinja2`, `.j2` | `{# ... #}`    | `{# doc-inject:configure {...} #}`    |
+
+For YAML-style (`#`) and similar line comment formats, the block continues on following comment-prefixed lines. Indentation is preserved and normalized.
+
+```yaml
+# doc-inject:configure
+# dashboard:
+#   file: dashboards/main.json
+#   query: $.uid
+#   template: "UID: {{ value }}"
+```
+
+You can also use:
+
+```html
+<!-- doc-inject:configure
+{
+  "meta": {
+    "file": "config.yaml",
+    "query": "dashboard.title",
+    "template": "{{ value }}"
+  }
+}
+-->
+```
+
+Indentation-sensitive formats like YAML are safely parsed by removing the comment prefix and dedenting all lines uniformly.
+
+---
+
 Need more? See usage examples in the main README or explore advanced templating support in Jinja2.
+

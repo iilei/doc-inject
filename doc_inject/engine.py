@@ -1,13 +1,46 @@
+import re
 from pathlib import Path
+from typing import Optional
+
+from doc_inject.config_loader import extract_config_from_document, extract_config_from_file
+from doc_inject.parsers.core import resolve_query
+from doc_inject.template import render_template
+
+INJECT_BLOCK_PATTERN = re.compile(
+    r"(?P<start><!-- DOC_INJECT_START (?P<name>[\w\-]+) -->)(?P<content>.*?)(?P<end><!-- DOC_INJECT_END \2 -->)",
+    re.DOTALL,
+)
 
 
-def inject_from_file(file_path: Path, dry_run: bool = False):
-    content = file_path.read_text()
+def inject_from_file(
+    file_path: Path, config_file_path: Optional[Path] = None, dry_run: bool = False
+):
+    content = file_path.read_text(encoding="utf-8")
 
-    # TODO: Implement config and tag parsing logic here
-    result = content.replace("{{example}}", "Injected content!")
+    config = (
+        extract_config_from_file(config_file_path)
+        if config_file_path
+        else extract_config_from_document(file_path)
+    )
+
+    items = config.get_items()
+
+    def replace_block(match: re.Match) -> str:
+        name = match.group("name")
+        if name not in items:
+            raise ValueError(f"No config found for injection block: '{name}'")
+
+        item = items[name]
+
+        # Resolve context and render
+        context = resolve_query(item)
+        rendered = render_template(item.template, context, strict=item.strict_template)
+
+        return f"{match.group('start')}\n{rendered}\n{match.group('end')}"
+
+    result = INJECT_BLOCK_PATTERN.sub(replace_block, content)
 
     if dry_run:
         print(result)
     else:
-        file_path.write_text(result)
+        file_path.write_text(result, encoding="utf-8")
