@@ -11,41 +11,44 @@ Configurable, format-aware, comment-driven content rendering — perfect for doc
 
 ## 🚀 What is it?
 
-`doc-inject` is a flexible CLI and pre-commit hook that **injects dynamic content** into documentation files by using:
+`doc-inject` is a flexible CLI and pre-commit hook that **injects dynamic content** into documentation and template files using:
 
-- 🧩 Configs in **JSON, YAML, or TOML**
-- ✍️ Format-aware **templating** (Markdown, HTML, AsciiDoc, Mermaid, etc.)
-- 💬 Lightweight **comment markers** to drive injection points
-- 🔁 Supports **dashboards, snippets, metadata**, and anything you can script
+- 🧩 Configs defined in **JSON, YAML, TOML** — or inline via **comments**
+- ✍️ Format-aware **templating** (Markdown, HTML, Jinja2, etc.)
+- 💬 Lightweight **comment-based injection markers**
+- 🔁 Sources like dashboards, changelogs, frontmatter, metadata, or any structured file
 
----
+It supports embedded config blocks inside `.md`, `.yaml`, `.toml`, `.json5`, `.jinja2` and others.
 
-Each entry in the config is a named injection block.
 
-| Field      | Type     | Required                          | Description                                                                     |
-| ---------- | -------- | --------------------------------- | ------------------------------------------------------------------------------- |
-| `file`     | `string` | :white_check_mark: Yes            | Path to the source file (e.g. JSON, YAML, TOML)                                 |
-| `parser`   | `string` | :x:  Optional                     | One of: `json`, `yaml`, `toml`, `text`. Inferred from file extension if omitted |
-| `query`    | `string` | :ballot_box_with_check: Required* | A single query to extract a value as `{{ value }}`                              |
-| `vars`     | `object` | :ballot_box_with_check: Required* | A dictionary of named variables, each assigned via a query                      |
-| `template` | `string` | :white_check_mark:Yes             | Jinja2-style template using `{{ value }}` or named variables like `{{ uid }}`   |
+## ⚙️ How It Works
 
-:warning: Either `query` **or** `vars` must be provided. You **cannot omit both**.
+Each config entry defines a named injection block:
 
-:white_check_mark: `parser` is optional — inferred from `file` extension (e.g. `.json`, `.yml`, etc.)
+| Field             | Type     | Required                          | Description                                                                  |
+| ----------------- | -------- | --------------------------------- | ---------------------------------------------------------------------------- |
+| `file`            | `string` | :white_check_mark: Yes            | Path to the source file (e.g. JSON, YAML, Markdown)                          |
+| `parser`          | `string` | :x: Optional                      | `json`, `yaml`, `toml`, or `text`. Inferred from `file` extension if omitted |
+| `query`           | `string` | :ballot_box_with_check: Required* | Query used to extract a single value (as `{{ value }}`)                      |
+| `vars`            | `object` | :ballot_box_with_check: Required* | Named variables mapped to queries (`{{ uid }}`, `{{ title }}`)               |
+| `template`        | `string` | :white_check_mark: Yes            | Jinja2-style template string                                                 |
+| `strict_template` | `bool`   | :x: Optional                      | Raise on missing template vars (default: true; can be set via env var)       |
+
+> :warning: Either `query` **or** `vars` must be provided. Not both. Not neither.
+
+> ✅ Environment fallback: use `export DOC_INJECT_STRICT=false` to disable strict rendering globally.
 
 
 ## ✨ Example
 
-### `README.md` snippet:
+### 📝 Inject block into `README.md`
 ```markdown
-<!-- DOC_INJECT_CONFIG
+<!-- doc-inject:configure
 {
   "simple-dashboard": {
     "file": "dashboards/main.json",
     "query": "$.uid",
-    "template": "[Dashboard](https://grafana.example.com/d/{{ value }})",
-    "strict_template": true
+    "template": "[Dashboard](https://grafana.example.com/d/{{ value }})"
   },
   "version-note": {
     "file": "CHANGELOG.md",
@@ -59,14 +62,28 @@ Each entry in the config is a named injection block.
 
 ...
 
-<!-- DOC_INJECT_START simple-dashboard-->
+<!-- DOC_INJECT_START simple-dashboard -->
 <!-- DOC_INJECT_END simple-dashboard -->
 
 ...
 
 <!-- DOC_INJECT_START version-note -->
 <!-- DOC_INJECT_END version-note -->
-
 ```
 
+This results in:
+```markdown
+<!-- DOC_INJECT_START simple-dashboard -->
+[Dashboard](https://grafana.example.com/d/abc123)
+<!-- DOC_INJECT_END simple-dashboard -->
+```
+
+---
+
+💡 You can also load config externally (e.g. `pyproject.toml`, `doc-inject.yaml`) and pass it via CLI:
+```bash
+doc-inject run README.md --config doc-inject.yaml
+```
+
+For more details on configuration structure and inline embedding formats, see [docs/configuration.md](docs/configuration.md).
 
