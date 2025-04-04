@@ -17,17 +17,19 @@ else:
 
 
 COMMENT_SYNTAX = {
+    "adoc": ("//", "//"),
+    "asciidoc": ("//", "//"),
     "json": ("//", "//"),
     "json5": ("//", "//"),
+    "html": ("<!--", "-->"),
+    "md": ("<!--", "-->"),
+    "ini": (";", ";"),
+    "j2": ("{#", "#}"),
+    "jinja2": ("{#", "#}"),
+    "py": ("#", "#"),
+    "toml": ("#", "#"),
     "yaml": ("#", "#"),
     "yml": ("#", "#"),
-    "toml": ("#", "#"),
-    "md": ("<!--", "-->"),
-    "html": ("<!--", "-->"),
-    "jinja2": ("{#", "#}"),
-    "j2": ("{#", "#}"),
-    "py": ("#", "#"),
-    "ini": (";", ";"),
 }
 
 
@@ -40,7 +42,7 @@ def extract_config_from_document(path: Path) -> InjectConfig:
             continue
 
         prefix, suffix = COMMENT_SYNTAX[ext]
-        block = _extract_comment_block(content, prefix, suffix)
+        block = _extract_comment_block(content, prefix, suffix, ext)
 
         if block:
             try:
@@ -88,13 +90,49 @@ def _get_extension_chain(path: Path) -> list[str]:
     return list(reversed(path.name.split(".")[1:])) or ["html", "json"]
 
 
-def _extract_comment_block(text: str, prefix: str, suffix: str) -> Optional[str]:
+def _extract_comment_block(text: str, prefix: str, suffix: str, ext: str) -> Optional[str]:
+    lines = text.splitlines()
+
+    if ext in ["asciidoc", "adoc"]:
+        # 1. AsciiDoc delimited block comment: ////
+        for i, line in enumerate(lines):
+            if line.strip() == "////":
+                block = []
+                for inner in lines[i + 1 :]:
+                    if inner.strip() == "////":
+                        break
+                    block.append(inner)
+                if block and "doc-inject:configure" in block[0]:
+                    return _dedent_after_directive(block)
+
+        # 2. AsciiDoc [comment] -- -- block
+        for i, line in enumerate(lines):
+            if line.strip().lower() == "[comment]" and i + 2 < len(lines):
+                if lines[i + 1].strip() == "--":
+                    block = []
+                    for inner in lines[i + 2 :]:
+                        if inner.strip() == "--":
+                            break
+                        block.append(inner)
+                    if block and "doc-inject:configure" in block[0]:
+                        return _dedent_after_directive(block)
+
+        # 3. AsciiDoc paragraph macro [comment] + contiguous lines
+        for i, line in enumerate(lines):
+            if line.strip().lower() == "[comment]" and i + 1 < len(lines):
+                block = []
+                for inner in lines[i + 1 :]:
+                    if not inner.strip():
+                        break
+                    block.append(inner)
+                if block and "doc-inject:configure" in block[0]:
+                    return _dedent_after_directive(block)
+
+    # 4. Line-comment mode (//, #, etc.)
     if prefix == suffix and prefix in {"#", "//", ";"}:
         directive_pattern = re.compile(
             rf"^{re.escape(prefix)}\s+doc-inject:configure\b", re.IGNORECASE
         )
-
-        lines = text.splitlines()
         block_lines = []
         found = False
 
@@ -103,22 +141,16 @@ def _extract_comment_block(text: str, prefix: str, suffix: str) -> Optional[str]
             if directive_pattern.match(stripped):
                 found = True
                 continue
-
             if found:
                 if stripped.startswith(prefix):
-                    # Strip only the first comment prefix and preserve indentation
-                    idx = line.index(prefix)
-                    after_prefix = line[idx + len(prefix) :]
+                    after_prefix = stripped[len(prefix) :]
                     block_lines.append(after_prefix.rstrip("\n"))
                 else:
                     break
-
         if block_lines:
             return textwrap.dedent("\n".join(block_lines))
 
-        return None
-
-    # Block-style comments (<!-- -->, {# #}, etc.)
+    # 5. Block-style (<!-- -->, {# #}, etc.)
     pattern = re.compile(
         rf"{re.escape(prefix)}\s*doc-inject:configure\s*(.*?)\s*{re.escape(suffix)}",
         re.DOTALL | re.IGNORECASE,
@@ -129,10 +161,23 @@ def _extract_comment_block(text: str, prefix: str, suffix: str) -> Optional[str]
 
 def _parse_structured_config(config_str: str) -> dict:
     try:
-        return yaml.safe_load(config_str)
+        loaded = yaml.safe_load(config_str)
+        if isinstance(loaded, dict):
+            return loaded
     except Exception:
         pass
+
     try:
-        return json5.loads(config_str)
+        loaded = json5.loads(config_str)
+        if isinstance(loaded, dict):
+            return loaded
     except Exception:
         raise ValueError("Unable to parse config block as YAML or JSON5.")
+
+
+def _dedent_after_directive(block: list[str]) -> str:
+    return textwrap.dedent(
+        "\n".join(
+            block[1:] if block and block[0].strip().startswith("doc-inject:configure") else block
+        )
+    )

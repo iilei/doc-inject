@@ -1,0 +1,7 @@
+- id: doc-inject
+  name: Inject dynamic content into documentation
+  entry: doc-inject run --check
+  language: python
+  types: [text]
+  files: \.(md|adoc|asciidoc|rst|html|jinja2|j2|yml|yaml|json5?)$
+  args: ["--config", "pyproject.toml", "--config-query", "tool.doc-inject"]

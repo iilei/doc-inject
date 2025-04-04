@@ -1,6 +1,8 @@
+import json
 import os
 from textwrap import dedent
 
+from doc_inject.config import InjectConfig
 from doc_inject.engine import inject_from_file
 
 
@@ -11,17 +13,8 @@ def test_inject_from_file_with_external_config(tmp_path):
 
     # Create config file with relative path
     config_file = tmp_path / "config.json"
-    config_file.write_text(
-        dedent("""\
-    {
-      "dashboard": {
-        "file": "data.json",
-        "query": "$.uid",
-        "template": "UID: {{ value }}"
-      }
-    }
-    """)
-    )
+    config = {"dashboard": {"file": "data.json", "query": "$.uid", "template": "UID: {{ value }}"}}
+    config_file.write_text(json.dumps(config))
 
     # Create target markdown file with injection markers
     target_file = tmp_path / "README.md"
@@ -40,7 +33,7 @@ def test_inject_from_file_with_external_config(tmp_path):
     os.chdir(tmp_path)
 
     try:
-        inject_from_file(file_path=target_file, config_file_path=config_file)
+        inject_from_file(file_path=target_file, config=InjectConfig.model_validate(config))
     finally:
         os.chdir(old_cwd)
 

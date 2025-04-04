@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Optional
 
 import typer
 
@@ -9,14 +10,34 @@ app = typer.Typer(help="Inject rendered content into documents using config-driv
 
 @app.command()
 def run(
-    file: Path = typer.Argument(..., exists=True, help="Path to the document to inject into."),
-    dry_run: bool = typer.Option(False, help="Print output instead of modifying the file."),
+    files: list[Path] = typer.Argument(...),
+    config: Optional[Path] = None,
+    config_query: Optional[str] = None,
+    check: bool = False,
+    verbose: bool = False,
 ):
-    """Render and inject content into a document."""
-    try:
-        inject_from_file(file, dry_run=dry_run)
-    except ValueError as e:
-        typer.echo(f"❌ Error: {e}", err=True)
+    from doc_inject.config_loader import extract_config_from_document, extract_config_from_file
+
+    failures = 0
+    for file in files:
+        original = file.read_text()
+
+        config = (
+            extract_config_from_file(config, query=config_query)
+            if config
+            else extract_config_from_document(file)
+        )
+
+        inject_from_file(file, dry_run=False, config=config)
+
+        updated = file.read_text()
+        if check and original != updated:
+            typer.echo(f":: error :: {file} is out of date", err=True)
+            failures += 1
+        elif verbose:
+            typer.echo(f"{file} is up-to-date ✅")
+
+    if failures:
         raise typer.Exit(code=1)
 
 

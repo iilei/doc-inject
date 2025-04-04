@@ -1,10 +1,9 @@
 import re
 from pathlib import Path
-from typing import Optional
 
-from doc_inject.config_loader import extract_config_from_document, extract_config_from_file
 from doc_inject.parsers.core import resolve_query
 from doc_inject.template import render_template
+from doc_inject.types import InjectItem
 
 INJECT_BLOCK_PATTERN = re.compile(
     r"(?P<start><!-- DOC_INJECT_START (?P<name>[\w\-]+) -->)(?P<content>.*?)(?P<end><!-- DOC_INJECT_END \2 -->)",
@@ -12,16 +11,8 @@ INJECT_BLOCK_PATTERN = re.compile(
 )
 
 
-def inject_from_file(
-    file_path: Path, config_file_path: Optional[Path] = None, dry_run: bool = False
-):
+def inject_from_file(file_path: Path, config: InjectItem, dry_run: bool = False):
     content = file_path.read_text(encoding="utf-8")
-
-    config = (
-        extract_config_from_file(config_file_path)
-        if config_file_path
-        else extract_config_from_document(file_path)
-    )
 
     items = config.get_items()
 

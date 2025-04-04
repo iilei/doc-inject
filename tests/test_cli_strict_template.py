@@ -15,15 +15,14 @@ def test_cli_respects_strict_template_false(tmp_path):
 
     # README with config + injection marker, and missing variable in template
     readme_path = tmp_path / "README.md"
-    readme_path.write_text(
-        dedent("""\
+    readme_text = dedent("""\
         <!-- doc-inject:configure
         {
           "test-block": {
             "file": "<file>",
             "parser": "json",
             "query": "$.uid",
-            "template": "Hello {{ missing }}",
+            "template": "Hello {{ missing }}!",
             "strict_template": false
           }
         }
@@ -32,13 +31,13 @@ def test_cli_respects_strict_template_false(tmp_path):
         <!-- DOC_INJECT_START test-block -->
         <!-- DOC_INJECT_END test-block -->
         """).replace("<file>", str(json_path))
-    )
+    readme_path.write_text(readme_text)
 
     result = runner.invoke(app, ["run", str(readme_path)])
 
     updated = readme_path.read_text()
     assert result.exit_code == 0
-    assert "Hello " in updated
+    assert "Hello !" in updated
 
 
 def test_cli_strict_env_false_allows_missing(monkeypatch, tmp_path):

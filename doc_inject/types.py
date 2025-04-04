@@ -7,6 +7,9 @@ ParserType = Literal["json", "yaml", "toml", "text"]
 
 EXTENSION_TO_PARSER = {
     ".json": "json",
+    ".adoc": "yaml",
+    ".asciidoc": "yaml",
+    ".rst": "yaml",
     ".yaml": "yaml",
     ".yml": "yaml",
     ".toml": "toml",

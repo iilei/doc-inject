@@ -3,7 +3,7 @@ from textwrap import dedent
 
 import pytest
 
-from doc_inject.config_loader import extract_config_from_document
+from doc_inject.config_loader import _parse_structured_config, extract_config_from_document
 
 
 def _write_file(tmp_path, filename: str, content: str) -> Path:
@@ -100,3 +100,33 @@ def test_extract_from_indented_yaml_config(tmp_path):
     assert "test-inject" in items
     assert items["test-inject"].file.name == "sample.json"
     assert items["test-inject"].template == "UID: {{ value }}"
+
+
+def test_parse_invalid_yaml_falls_back():
+    invalid_yaml = """
+    - just
+    - a
+    - list
+    """
+
+    with pytest.raises(ValueError, match="Unable to parse config block as YAML or JSON5"):
+        _parse_structured_config(invalid_yaml)
+
+
+def test_parse_valid_json5_fallback():
+    json5_input = """
+    // this is a comment
+    {
+      example: {
+        file: "data.json",
+        query: "$.uid",
+        template: "{{ value }}"
+      }
+    }
+    """
+
+    parsed = _parse_structured_config(json5_input)
+    assert "example" in parsed
+    assert parsed["example"]["file"] == "data.json"
+    assert parsed["example"]["template"] == "{{ value }}"
+    assert parsed["example"]["query"] == "$.uid"
