@@ -25,14 +25,14 @@ It supports embedded config blocks inside `.md`, `.yaml`, `.toml`, `.json5`, `.j
 
 Each config entry defines a named injection block:
 
-| Field             | Type     | Required                          | Description                                                                  |
-| ----------------- | -------- | --------------------------------- | ---------------------------------------------------------------------------- |
-| `file`            | `string` | :white_check_mark: Yes            | Path to the source file (e.g. JSON, YAML, Markdown)                          |
-| `parser`          | `string` | :x: Optional                      | `json`, `yaml`, `toml`, or `text`. Inferred from `file` extension if omitted |
-| `query`           | `string` | :ballot_box_with_check: Required* | Query used to extract a single value (as `{{ value }}`)                      |
-| `vars`            | `object` | :ballot_box_with_check: Required* | Named variables mapped to queries (`{{ uid }}`, `{{ title }}`)               |
-| `template`        | `string` | :white_check_mark: Yes            | Jinja2-style template string                                                 |
-| `strict_template` | `bool`   | :x: Optional                      | Raise on missing template vars (default: true; can be set via env var)       |
+| Field             | Type     | Required                          | Description                                                                                                   |
+| ----------------- | -------- | --------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `file`            | `string` | :white_check_mark: Yes            | Path to the source file (e.g. JSON, YAML, Markdown). Supports glob patterns too (e.g. `dashboards/**/*.json`) |
+| `parser`          | `string` | :x: Optional                      | `json`, `yaml`, `toml`, or `text`. Inferred from `file` extension if omitted                                  |
+| `query`           | `string` | :ballot_box_with_check: Required* | Query used to extract a single value (as `{{ value }}`)                                                       |
+| `vars`            | `object` | :ballot_box_with_check: Required* | Named variables mapped to queries (`{{ uid }}`, `{{ title }}`)                                                |
+| `template`        | `string` | :white_check_mark: Yes            | Jinja2-style template string                                                                                  |
+| `strict_template` | `bool`   | :x: Optional                      | Raise on missing template vars (default: true; can be set via env var)                                        |
 
 > :warning: Either `query` **or** `vars` must be provided. Not both. Not neither.
 
@@ -56,6 +56,12 @@ Each config entry defines a named injection block:
     "query": "regex:^Version: (?P<version>\\d+\\.\\d+\\.\\d+)",
     "template": "**Current Version**: {{ version }}",
     "strict_template": false
+  },
+  "dashboard-list": {
+    "file": "dashboards/**/*.json",
+    "parser": "json",
+    "query": "$",
+    "template": "{% for d in value %}- [{{ d.title }}](https://grafana.example.com/d/{{ d.uid }}){% endfor %}"
   }
 }
 -->
@@ -69,21 +75,27 @@ Each config entry defines a named injection block:
 
 <!-- DOC_INJECT_START version-note -->
 <!-- DOC_INJECT_END version-note -->
+
+...
+
+<!-- DOC_INJECT_START dashboard-list -->
+<!-- DOC_INJECT_END dashboard-list -->
 ```
 
 This results in:
 ```markdown
-<!-- DOC_INJECT_START simple-dashboard -->
-[Dashboard](https://grafana.example.com/d/abc123)
-<!-- DOC_INJECT_END simple-dashboard -->
+<!-- DOC_INJECT_START dashboard-list -->
+- [Team Dashboard 0](https://grafana.example.com/d/uid-0)
+- [Team Dashboard 1](https://grafana.example.com/d/uid-1)
+- [Team Dashboard 2](https://grafana.example.com/d/uid-2)
+<!-- DOC_INJECT_END dashboard-list -->
 ```
 
 ---
 
 💡 You can also load config externally (e.g. `pyproject.toml`, `doc-inject.yaml`) and pass it via CLI:
 ```bash
-doc-inject run README.md --config doc-inject.yaml
+doc-inject run README.md --config pyproject.toml --config-query tool.doc-inject
 ```
 
 For more details on configuration structure and inline embedding formats, see [docs/configuration.md](docs/configuration.md).
-

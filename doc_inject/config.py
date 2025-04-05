@@ -1,7 +1,13 @@
+from glob import glob
 from pathlib import Path
 from typing import Dict, Literal, Optional
 
 from pydantic import BaseModel, RootModel, model_validator
+
+
+def resolve_file_paths(file_pattern: str) -> list[Path]:
+    return [Path(p) for p in glob(file_pattern, recursive=True)]
+
 
 ParserType = Literal["json", "yaml", "toml", "text"]
 
