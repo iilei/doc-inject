@@ -71,6 +71,14 @@ def test_parser_inferred_from_toml_extension():
     assert item.parser == "toml"
 
 
+def test_validation_fails_with_ambiguous_file_and_glob():
+    with pytest.raises(ValidationError) as excinfo:
+        InjectItem.model_validate(
+            {"file": Path("data.md"), "glob": "x", "query": "$.uid", "template": "{{ value }}"}
+        )
+    assert "Exactly one of 'file' or 'glob' must be provided" in str(excinfo.value)
+
+
 def test_parser_inferred_from_yaml_extension():
     item = InjectItem.model_validate(
         {"file": Path("config.yaml"), "query": "dashboard.title", "template": "{{ value }}"}
