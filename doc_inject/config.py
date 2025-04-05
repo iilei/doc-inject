@@ -1,8 +1,11 @@
 from glob import glob
 from pathlib import Path
-from typing import Dict, Literal, Optional
+from typing import Annotated, Dict, Literal, Optional, Union
 
 from pydantic import BaseModel, RootModel, model_validator
+from pydantic.types import StringConstraints
+
+NonBlankStr = Annotated[str, StringConstraints(min_length=1)]
 
 
 def resolve_file_paths(file_pattern: str) -> list[Path]:
@@ -26,28 +29,37 @@ EXTENSION_TO_PARSER = {
 
 
 class InjectItem(BaseModel):
-    file: Path
+    file: Optional[Union[NonBlankStr, Path]] = None
+    glob: Optional[NonBlankStr] = None
     parser: Optional[ParserType] = None
-    query: Optional[str] = None
-    vars: Optional[Dict[str, str]] = None
-    template: str
+    query: Optional[NonBlankStr] = None
+    vars: Optional[Dict[str, NonBlankStr]] = None
+    template: NonBlankStr
     strict_template: Optional[bool] = None
 
     @model_validator(mode="after")
-    def validate_and_infer(self) -> "InjectItem":
-        # Infer parser from file extension
+    def validate_and_normalize(self) -> "InjectItem":
+        if bool(self.file) == bool(self.glob):
+            raise ValueError("Exactly one of 'file' or 'glob' must be provided.")
+
+        if not self.query and not self.vars:
+            raise ValueError("Either 'query' or 'vars' must be defined.")
+        if self.query and self.vars:
+            raise ValueError("Provide either 'query' or 'vars', not both.")
+
+        sample_path = Path(self.file) if self.file else Path(self.glob)
+        ext = sample_path.suffix.lower()
         if not self.parser:
-            ext = self.file.suffix.lower()
             inferred = EXTENSION_TO_PARSER.get(ext)
             if not inferred:
                 raise ValueError(f"Cannot infer parser from file extension '{ext}'")
             self.parser = inferred
 
-        if not self.query and not self.vars:
-            raise ValueError("Either 'query' or 'vars' must be defined.")
+        if self.glob:
+            self._resolved_files = resolve_file_paths(self.glob)
 
-        if self.query and self.vars:
-            raise ValueError("Provide either 'query' or 'vars', not both.")
+        if self.file:
+            self._resolved_files = [Path(self.file)]
 
         return self
 

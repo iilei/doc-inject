@@ -84,3 +84,32 @@ def test_parser_inferred_from_yml_extension():
     )
     assert item.parser == "yaml"
     assert "uid" in item.vars
+
+
+def test_rejects_empty_template():
+    with pytest.raises(
+        ValidationError, match="template\n  String should have at least 1 character"
+    ):
+        InjectItem.model_validate({"file": "foo.json", "query": "$.uid", "template": ""})
+
+
+def test_rejects_empty_query():
+    with pytest.raises(ValidationError, match="query\n  String should have at least 1 character"):
+        InjectItem.model_validate({"file": "foo.json", "query": "", "template": "{{ value }}"})
+
+
+def test_rejects_blank_glob():
+    with pytest.raises(ValidationError, match="String should have at least 1 character"):
+        InjectItem.model_validate({"glob": "", "query": "$.uid", "template": "{{ value }}"})
+
+
+def test_rejects_blank_file():
+    with pytest.raises(ValidationError, match="Cannot infer parser from file extension"):
+        InjectItem.model_validate({"file": "", "query": "$.uid", "template": "{{ value }}"})
+
+
+def test_rejects_blank_vars():
+    with pytest.raises(ValidationError, match="String should have at least 1 character"):
+        InjectItem.model_validate(
+            {"file": "foo.json", "vars": {"uid": ""}, "template": "{{ uid }}"}
+        )

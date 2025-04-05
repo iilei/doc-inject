@@ -31,7 +31,7 @@ def test_extract_from_markdown_comment(tmp_path):
 
     config = extract_config_from_document(md)
     assert "example" in config.get_items()
-    assert config.get_items()["example"].file.name == "data.json"
+    assert config.get_items()["example"]._resolved_files[0].name == "data.json"
 
 
 def test_extract_from_yaml_comment_block(tmp_path):
@@ -49,7 +49,7 @@ def test_extract_from_yaml_comment_block(tmp_path):
 
     config = extract_config_from_document(yaml_file)
     assert "example" in config.get_items()
-    assert config.get_items()["example"].file.name == "data.json"
+    assert config.get_items()["example"]._resolved_files[0].name == "data.json"
 
 
 def test_extract_from_jinja2_json5_comment_block(tmp_path):
@@ -71,7 +71,7 @@ def test_extract_from_jinja2_json5_comment_block(tmp_path):
 
     config = extract_config_from_document(jinja_json5)
     assert "block" in config.get_items()
-    assert config.get_items()["block"].file.name == "data.json"
+    assert config.get_items()["block"]._resolved_files[0].name == "data.json"
 
 
 def test_extract_config_block_not_found(tmp_path):
@@ -98,7 +98,8 @@ def test_extract_from_indented_yaml_config(tmp_path):
     items = config.get_items()
 
     assert "test-inject" in items
-    assert items["test-inject"].file.name == "sample.json"
+
+    assert items["test-inject"]._resolved_files[0].name == "sample.json"
     assert items["test-inject"].template == "UID: {{ value }}"
 
 

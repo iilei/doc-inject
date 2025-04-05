@@ -49,6 +49,8 @@ def extract_config_from_document(path: Path) -> InjectConfig:
                 config_data = _parse_structured_config(block)
                 return InjectConfig.model_validate(config_data)
             except Exception as e:
+                print(e)
+            except Exception as e:
                 raise ValueError(f"Config block found but failed to parse: {e}")
 
     raise ValueError(f"No usable config block found in {path}")
@@ -60,6 +62,9 @@ def extract_config_from_file(path: Path, query: str | None = None) -> InjectConf
 
     content = path.read_text(encoding="utf-8")
     ext = path.suffix.lower()
+
+    if ext == ".toml" and not query:
+        query = "tool.doc-inject"
 
     try:
         if ext == ".json":

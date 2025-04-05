@@ -13,7 +13,13 @@ def test_inject_from_file_with_external_config(tmp_path):
 
     # Create config file with relative path
     config_file = tmp_path / "config.json"
-    config = {"dashboard": {"file": "data.json", "query": "$.uid", "template": "UID: {{ value }}"}}
+    config = {
+        "dashboard": {
+            "file": data_file.as_posix(),
+            "query": "$.uid",
+            "template": "UID: {{ value }}",
+        }
+    }
     config_file.write_text(json.dumps(config))
 
     # Create target markdown file with injection markers

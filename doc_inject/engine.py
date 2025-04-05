@@ -1,9 +1,9 @@
 import re
 from pathlib import Path
 
+from doc_inject.config import InjectItem
 from doc_inject.parsers.core import resolve_query
 from doc_inject.template import render_template
-from doc_inject.types import InjectItem
 
 INJECT_BLOCK_PATTERN = re.compile(
     r"(?P<start><!-- DOC_INJECT_START (?P<name>[\w\-]+) -->)(?P<content>.*?)(?P<end><!-- DOC_INJECT_END \2 -->)",
@@ -11,7 +11,7 @@ INJECT_BLOCK_PATTERN = re.compile(
 )
 
 
-def inject_from_file(file_path: Path, config: InjectItem, dry_run: bool = False):
+def inject_from_file(file_path: Path, config: InjectItem):
     content = file_path.read_text(encoding="utf-8")
 
     items = config.get_items()
@@ -31,7 +31,4 @@ def inject_from_file(file_path: Path, config: InjectItem, dry_run: bool = False)
 
     result = INJECT_BLOCK_PATTERN.sub(replace_block, content)
 
-    if dry_run:
-        print(result)
-    else:
-        file_path.write_text(result, encoding="utf-8")
+    file_path.write_text(result, encoding="utf-8")

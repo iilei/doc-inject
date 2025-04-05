@@ -1,7 +1,12 @@
+# SPDX-FileCopyrightText: 2025-present iilei • jochen preusche <922226+iilei@users.noreply.github.com>
+#
+# SPDX-License-Identifier: MIT
+
 - id: doc-inject
   name: Inject dynamic content into documentation
-  entry: doc-inject run --check
+  entry: doc-inject run
   language: python
-  types: [text]
   files: \.(md|adoc|asciidoc|rst|html|jinja2|j2|yml|yaml|json5?)$
-  args: ["--config", "pyproject.toml", "--config-query", "tool.doc-inject"]
+  pass_filenames: true
+  # example args:
+  # args: ["--config", "pyproject.toml", "--config-query", "tool.doc-inject"]
