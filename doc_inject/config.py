@@ -1,8 +1,14 @@
+import os
 from glob import glob
 from pathlib import Path
 from typing import Annotated, Dict, Literal, Optional, Union
 
-from pydantic import BaseModel, RootModel, model_validator
+from pydantic import (
+    BaseModel,
+    PrivateAttr,
+    RootModel,
+    model_validator,
+)
 from pydantic.types import StringConstraints
 
 NonBlankStr = Annotated[str, StringConstraints(min_length=1)]
@@ -37,6 +43,24 @@ class InjectItem(BaseModel):
     template: NonBlankStr
     strict_template: Optional[bool] = None
 
+    _base_path: Optional[Path] = PrivateAttr(default=None)
+    _resolved_files: list[Path] = PrivateAttr(default_factory=list)
+
+    def set_base_path(self, base: Path):
+        self._base_path = base.resolve()
+        self._resolve_paths()
+
+    def _resolve_paths(self):
+        base_dir = Path(self._base_path) or Path.cwd()
+
+        if self.glob:
+            pattern = (base_dir / self.glob).as_posix()
+            self._resolved_files = resolve_file_paths(pattern)
+
+        if self.file:
+            path = (base_dir / self.file).resolve()
+            self._resolved_files = [path]
+
     @model_validator(mode="after")
     def validate_and_normalize(self) -> "InjectItem":
         if bool(self.file) == bool(self.glob):
@@ -47,19 +71,16 @@ class InjectItem(BaseModel):
         if self.query and self.vars:
             raise ValueError("Provide either 'query' or 'vars', not both.")
 
-        sample_path = Path(self.file) if self.file else Path(self.glob)
-        ext = sample_path.suffix.lower()
+        self._base_path = os.getcwd()
+        self._resolve_paths()
+
+        ext = f".{([*[x.as_posix() for x in self._resolved_files], ''][0]).rpartition('.')[-1].lower()}"
+
         if not self.parser:
             inferred = EXTENSION_TO_PARSER.get(ext)
             if not inferred:
                 raise ValueError(f"Cannot infer parser from file extension '{ext}'")
             self.parser = inferred
-
-        if self.glob:
-            self._resolved_files = resolve_file_paths(self.glob)
-
-        if self.file:
-            self._resolved_files = [Path(self.file)]
 
         return self
 
@@ -67,3 +88,8 @@ class InjectItem(BaseModel):
 class InjectConfig(RootModel[Dict[str, InjectItem]]):
     def get_items(self) -> Dict[str, InjectItem]:
         return self.root
+
+    def with_base_path(self, path: Path) -> "InjectConfig":
+        for item in self.root.values():
+            item.set_base_path(path)
+        return self

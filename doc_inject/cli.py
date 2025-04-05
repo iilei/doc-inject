@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from typing import Optional
 
@@ -18,10 +19,12 @@ def run(
     from doc_inject.config_loader import extract_config_from_document, extract_config_from_file
 
     for file in files:
+        base_path = Path(os.path.dirname(os.path.realpath(file)))
+
         config: InjectConfig = (
-            extract_config_from_file(config, query=config_query)
+            extract_config_from_file(config, query=config_query).with_base_path(base_path)
             if config
-            else extract_config_from_document(file)
+            else extract_config_from_document(file).with_base_path(base_path)
         )
 
         inject_from_file(file, config=config)
