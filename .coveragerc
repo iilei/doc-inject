@@ -1,0 +1,7 @@
+[run]
+branch = true
+source = doc_inject
+
+[report]
+show_missing = true
+skip_covered = true

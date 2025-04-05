@@ -33,18 +33,11 @@ dev = [
   "types-toml"
 ]
 
-[project.scripts]
-doc-inject = "doc_inject.cli:app"
-
-[tool.hatch.envs.default]
-dependencies = [
-  "pytest",
-  "ruff",
-  "pre-commit",
-]
 
 [tool.hatch.envs.default.scripts]
-test = "pytest"
+test = "coverage run -m pytest tests && coverage report"
+covreport = "coverage report && coverage html"
+
 lint = "ruff check ."
 fmt = "ruff format ."
 fix = "ruff check . --fix"

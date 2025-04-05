@@ -6,7 +6,7 @@
   name: Inject dynamic content into documentation
   entry: doc-inject run
   language: python
-  files: \.(md|adoc|asciidoc|rst|html|jinja2|j2|yml|yaml|json5?)$
+  files: \.(md|adoc|asciidoc|html|jinja2|j2|yml|yaml|json5?)$
   pass_filenames: true
   # example args:
   # args: ["--config", "pyproject.toml", "--config-query", "tool.doc-inject"]

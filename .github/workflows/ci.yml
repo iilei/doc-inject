@@ -26,8 +26,13 @@ jobs:
       - name: 📦 Install project dependencies
         run: hatch env create
 
-      - name: 🧪 Run tests
+      - name: 🧪 Run tests and collect coverage
         run: hatch run test
+
+      - name: 📊 Upload coverage report
+        if: always()
+        run: hatch run coverage
+
 
       - name: 🧹 Run Ruff linting
         run: hatch run lint

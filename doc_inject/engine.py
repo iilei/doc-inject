@@ -6,8 +6,16 @@ from doc_inject.parsers.core import resolve_query
 from doc_inject.template import render_template
 
 INJECT_BLOCK_PATTERN = re.compile(
-    r"(?P<start><!-- DOC_INJECT_START (?P<name>[\w\-]+) -->)(?P<content>.*?)(?P<end><!-- DOC_INJECT_END \2 -->)",
-    re.DOTALL,
+    r"""
+    (?P<start>
+        (?:<!--|//|\#|\;) \s* DOC_INJECT_START \s+ (?P<name>[\w\-]+) \s* (?:-->)?
+    )
+    (?P<content>.*?)
+    (?P<end>
+        (?:<!--|//|\#|\;) \s* DOC_INJECT_END \s+ \2 \s* (?:-->)?
+    )
+    """,
+    re.DOTALL | re.VERBOSE,
 )
 
 
